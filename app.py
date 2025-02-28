@@ -1,4 +1,4 @@
-# Géolocalisation et filtres (commercial, département, entreprise)
+# Géolocalisation et filtres (commercial, départements multiples, entreprise)
 
 import streamlit as st
 import folium
@@ -8,7 +8,7 @@ from geopy.distance import geodesic
 
 # Début de l'interface Streamlit
 st.title("📍 Visualisation des Clients Géocodés")
-st.write("Chargez votre fichier CSV et appliquez des filtres par commercial, département ou entreprise.")
+st.write("Chargez votre fichier CSV et appliquez des filtres par commercial, département(s) ou entreprise.")
 
 # 🛠️ **Étape 1 : Interface d'upload du fichier**
 uploaded_file = st.file_uploader("📂 Charger votre fichier CSV", type=["csv"])
@@ -41,9 +41,9 @@ if uploaded_file is not None:
     commercial_list = df["Rep1 Tiers"].dropna().unique().tolist()
     selected_commercial = st.selectbox("🧑‍💼 Sélection Commercial", ["Tous"] + sorted(commercial_list))
 
-    # Sélection d'un département
+    # Sélection multiple des départements
     department_list = df["Département"].dropna().unique().tolist()
-    selected_department = st.selectbox("🌍 Sélection Département", ["Tous"] + sorted(department_list))
+    selected_departments = st.multiselect("🌍 Sélection Département(s)", sorted(department_list), default=[])
 
     # Appliquer les filtres
     df_filtered = df.copy()
@@ -51,8 +51,8 @@ if uploaded_file is not None:
     if selected_commercial != "Tous":
         df_filtered = df_filtered[df_filtered["Rep1 Tiers"] == selected_commercial]
 
-    if selected_department != "Tous":
-        df_filtered = df_filtered[df_filtered["Département"] == selected_department]
+    if selected_departments:
+        df_filtered = df_filtered[df_filtered["Département"].isin(selected_departments)]
 
     # Sélection d'une entreprise spécifique
     selected_company = st.selectbox("🏢 Rechercher une entreprise", [""] + sorted(df_filtered["Nom tiers"].unique()))
@@ -97,10 +97,12 @@ if uploaded_file is not None:
         # Générer et afficher la carte avec un zoom sur l'entreprise
         map_obj = create_map(nearby_companies, center_lat, center_lon, zoom=17)
         folium_static(map_obj)
-    elif selected_department != "Tous":
-        # Afficher la carte complète du département avec un zoom sur le département
-        map_obj = create_map(df_filtered[df_filtered["Département"] == selected_department], zoom=9)
+
+    elif selected_departments:
+        # Afficher la carte complète des départements sélectionnés
+        map_obj = create_map(df_filtered, zoom=9)
         folium_static(map_obj)
+
     else:
         # Afficher la carte complète avec un zoom plus large
         map_obj = create_map(df_filtered, zoom=6)
