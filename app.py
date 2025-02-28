@@ -6,11 +6,16 @@ import pandas as pd
 from streamlit_folium import folium_static
 from geopy.distance import geodesic
 
-# Charger les données
-csv_file = "global_clients_valid_coords.csv"
+# Début de l'interface Streamlit
+st.title("📍 Visualisation des Clients Géocodés")
+st.write("Chargez votre fichier CSV et appliquez des filtres par commercial, département ou entreprise.")
 
-try:
-    df = pd.read_csv(csv_file)
+# 🛠️ **Étape 1 : Interface d'upload du fichier**
+uploaded_file = st.file_uploader("📂 Charger votre fichier CSV", type=["csv"])
+
+if uploaded_file is not None:
+    # Charger le fichier en DataFrame
+    df = pd.read_csv(uploaded_file)
 
     # Vérifie si les colonnes nécessaires existent
     required_columns = {'latitude',
@@ -22,7 +27,7 @@ try:
                         'Rue1 Tiers'
                         }
     if not required_columns.issubset(df.columns):
-        st.error(f"Le fichier CSV ne contient pas toutes les colonnes nécessaires: {required_columns}")
+        st.error(f"Le fichier CSV doit contenir les colonnes : {required_columns}")
         st.stop()
 
     # Supprimer les lignes avec des coordonnées manquantes (si nécessaire)
@@ -31,10 +36,6 @@ try:
     # Convertir les colonnes latitude et longitude en float (si nécessaire)
     # df['latitude'] = df['latitude'].astype(float)
     # df['longitude'] = df['longitude'].astype(float)
-
-    # Début de l'interface Streamlit
-    st.title("📍 Visualisation des Clients Géocodés")
-    st.write("Filtrez par commercial, département ou recherchez une entreprise spécifique.")
 
     # Sélection d'un commercial
     commercial_list = df["Rep1 Tiers"].dropna().unique().tolist()
@@ -105,5 +106,5 @@ try:
         map_obj = create_map(df_filtered, zoom=6)
         folium_static(map_obj)
 
-except FileNotFoundError:   # Retourne une erreur si le fichier CSV n'est pas trouvé
-    st.error(f"Le fichier `{csv_file}` est introuvable. Assurez-vous qu'il est disponible.")
+else:
+    st.warning("⚠️ Veuillez charger un fichier CSV pour afficher les données.")
